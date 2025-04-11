@@ -50,3 +50,6 @@ Detected license plate regions
 Recognized text (displayed in table format)
 
 Annotated image/video preview
+
+
+
