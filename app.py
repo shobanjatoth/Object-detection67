@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -8,6 +8,8 @@ import os
 import time
 from difflib import SequenceMatcher
 import base64
+import re
+import glob
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Car License Plate Detection", layout="centered")
@@ -116,6 +118,14 @@ ocr = PaddleOCR(use_angle_cls=True, lang='en')
 os.makedirs("temp", exist_ok=True)
 
 # --- Helper Functions ---
+def safe_filename(filename):
+    return re.sub(r'[^\w_.-]', '_', filename)
+
+def cleanup_temp():
+    files = glob.glob("temp/*")
+    for f in files:
+        os.remove(f)
+
 def is_similar(text, seen_texts, threshold=0.85):
     for seen in seen_texts:
         if SequenceMatcher(None, text, seen).ratio() >= threshold:
@@ -173,23 +183,27 @@ def process_video(video_path, output_path):
 
     ocr_data_all = []
     seen_texts = set()
+    frame_count = 0
+    frame_skip = 3  # Change this based on testing
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = model.predict(rgb_frame, device='cpu')
+        if frame_count % frame_skip == 0:
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = model.predict(rgb_frame, device='cpu')
 
-        for result in results:
-            for box in result.boxes:
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                roi = frame[y1:y2, x1:x2]
-                if roi.size > 0:
-                    ocr_data_all.extend(extract_text_from_region(roi, ocr, seen_texts))
+            for result in results:
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    roi = frame[y1:y2, x1:x2]
+                    if roi.size > 0:
+                        ocr_data_all.extend(extract_text_from_region(roi, ocr, seen_texts))
 
+        frame_count += 1
         out.write(frame)
 
     cap.release()
@@ -209,8 +223,9 @@ def process_media(input_path, output_path):
 
 # --- Main Logic ---
 if uploaded_file is not None:
-    input_path = os.path.join("temp", uploaded_file.name)
-    output_path = os.path.join("temp", f"output_{uploaded_file.name}")
+    filename = safe_filename(uploaded_file.name)
+    input_path = os.path.join("temp", filename)
+    output_path = os.path.join("temp", f"output_{filename}")
 
     with open(input_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
@@ -223,9 +238,7 @@ if uploaded_file is not None:
 
     if result_path:
         if result_path.endswith(('.mp4', '.avi', '.mov', '.mkv')):
-            with open(result_path, 'rb') as f:
-                video_bytes = f.read()
-            st.video(video_bytes)
+            st.video(f"temp/output_{filename}")
         else:
             st.image(result_path, use_container_width=True)
 
@@ -236,8 +249,10 @@ if uploaded_file is not None:
         else:
             st.info("No text detected.")
 
+    cleanup_temp()
 
 # --- CONTACT INFO ---
 st.markdown('<div class="contact">Contact: <a href="mailto:shobanbabujatoth@gmail.com">shobanbabujatoth@gmail.com</a></div>', unsafe_allow_html=True)
+
 
 
