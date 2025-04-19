@@ -30,7 +30,7 @@ def set_background(image_path):
     )
 
 # ✅ Set background
-set_background("background.jpg")  # Replace with your image filename
+set_background("assets/car3.jpg")  # Replace with your image filename
 
 # Set Streamlit config
 st.set_page_config(page_title="License Plate Recognition", layout="centered")
