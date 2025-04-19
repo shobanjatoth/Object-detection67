@@ -221,20 +221,22 @@ if uploaded_file is not None:
     with st.spinner("Running object detection and OCR..."):
         result_path, ocr_results = process_media(input_path, output_path)
 
-    if result_path:
-        if result_path.endswith(('.mp4', '.avi', '.mov', '.mkv')):
-            with open(result_path, 'rb') as f:
-                video_bytes = f.read()
-            st.video(video_bytes)
-        else:
-            st.image(result_path, use_container_width=True)
+    if result_path and os.path.exists(result_path):
+    if result_path.endswith(('.mp4', '.avi', '.mov', '.mkv')):
+        with open(result_path, 'rb') as f:
+            video_bytes = f.read()
+        st.video(video_bytes)
+    else:
+        st.image(result_path, use_container_width=True)
 
-        if ocr_results:
-            st.subheader("🔍 Unique OCR Detected Texts")
-            df = pd.DataFrame(ocr_results)
-            st.dataframe(df)
-        else:
-            st.info("No text detected.")
+    if ocr_results:
+        st.subheader("🔍 Unique OCR Detected Texts")
+        df = pd.DataFrame(ocr_results)
+        st.dataframe(df)
+    else:
+        st.info("No text detected.")
+else:
+    st.error("❌ Processed file not found. Please try again.")
 
 
 # --- CONTACT INFO ---
