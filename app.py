@@ -1,13 +1,19 @@
-import streamlit as st 
+import os
+import streamlit as st
+from paddleocr import PaddleOCR, draw_ocr
+from ultralytics import YOLO
 import cv2
 import numpy as np
-from ultralytics import YOLO
-from paddleocr import PaddleOCR
 import pandas as pd
-import os
 import time
 from difflib import SequenceMatcher
 import base64
+
+# --- Set PaddleOCR Model Cache Directory ---
+# Set PaddleOCR model directory inside project folder
+custom_model_dir = os.path.join(os.getcwd(), 'models')
+os.environ['PADDLEOCR_HOME'] = custom_model_dir
+os.makedirs(custom_model_dir, exist_ok=True)
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Car License Plate Detection", layout="centered")
@@ -30,7 +36,6 @@ st.markdown(f"""
         color: white;
         font-family: 'Segoe UI', sans-serif;
     }}
-
     .main-container {{
         background-color: rgba(0, 0, 0, 0.5);
         padding: 50px 40px;
@@ -39,7 +44,6 @@ st.markdown(f"""
         margin: 100px auto 30px auto;
         border-radius: 12px;
     }}
-
     .main-title {{
         font-size: 32px;
         font-weight: bold;
@@ -47,7 +51,6 @@ st.markdown(f"""
         margin-bottom: 30px;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     }}
-
     .upload-btn {{
         display: inline-block;
         background-color: #008CFF;
@@ -59,33 +62,28 @@ st.markdown(f"""
         text-decoration: none;
         cursor: pointer;
     }}
-
     .contact {{
         text-align: center;
         font-size: 16px;
         margin-top: 60px;
         font-weight: bold;
     }}
-
     .contact a {{
         color: #42A5F5;
         text-decoration: none;
     }}
-
     div.stButton > button:first-child {{
         background-color: #1E88E5;
         color: white;
         border-radius: 6px;
         padding: 8px 20px;
     }}
-
     .stFileUploader {{
         background-color: rgba(255, 255, 255, 0.1);
         border: 2px solid #64B5F6;
         border-radius: 10px;
         padding: 10px;
     }}
-
     .stDataFrame tbody td {{
         background-color: rgba(255, 255, 255, 0.05);
         color: white;
@@ -106,9 +104,15 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Load Models ---
 model = YOLO('best.pt')
-ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
-# --- Setup temp directory ---
+# Use the caching method to load OCR model
+@st.cache_resource
+def load_ocr():
+    return PaddleOCR(use_angle_cls=True, lang='en')
+
+ocr = load_ocr()
+
+# Create temp directory if it doesn't exist
 os.makedirs("temp", exist_ok=True)
 
 # --- Helper Functions ---
@@ -236,6 +240,5 @@ if uploaded_file is not None:
 
 # --- CONTACT INFO ---
 st.markdown('<div class="contact">Contact: <a href="mailto:shobanbabujatoth@gmail.com">shobanbabujatoth@gmail.com</a></div>', unsafe_allow_html=True)
-
 
 
