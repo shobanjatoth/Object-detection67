@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -30,6 +30,7 @@ st.markdown(f"""
         color: white;
         font-family: 'Segoe UI', sans-serif;
     }}
+
     .main-container {{
         background-color: rgba(0, 0, 0, 0.5);
         padding: 50px 40px;
@@ -38,6 +39,7 @@ st.markdown(f"""
         margin: 100px auto 30px auto;
         border-radius: 12px;
     }}
+
     .main-title {{
         font-size: 32px;
         font-weight: bold;
@@ -45,6 +47,7 @@ st.markdown(f"""
         margin-bottom: 30px;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     }}
+
     .upload-btn {{
         display: inline-block;
         background-color: #008CFF;
@@ -56,28 +59,33 @@ st.markdown(f"""
         text-decoration: none;
         cursor: pointer;
     }}
+
     .contact {{
         text-align: center;
         font-size: 16px;
         margin-top: 60px;
         font-weight: bold;
     }}
+
     .contact a {{
         color: #42A5F5;
         text-decoration: none;
     }}
+
     div.stButton > button:first-child {{
         background-color: #1E88E5;
         color: white;
         border-radius: 6px;
         padding: 8px 20px;
     }}
+
     .stFileUploader {{
         background-color: rgba(255, 255, 255, 0.1);
         border: 2px solid #64B5F6;
         border-radius: 10px;
         padding: 10px;
     }}
+
     .stDataFrame tbody td {{
         background-color: rgba(255, 255, 255, 0.05);
         color: white;
@@ -85,7 +93,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MAIN INTERFACE ---
+# --- MAIN INTERFACE CONTAINER ---
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 st.markdown('<div class="main-title">Car License Plate Detection</div>', unsafe_allow_html=True)
 
@@ -105,7 +113,10 @@ os.makedirs("temp", exist_ok=True)
 
 # --- Helper Functions ---
 def is_similar(text, seen_texts, threshold=0.85):
-    return any(SequenceMatcher(None, text, seen).ratio() >= threshold for seen in seen_texts)
+    for seen in seen_texts:
+        if SequenceMatcher(None, text, seen).ratio() >= threshold:
+            return True
+    return False
 
 def extract_text_from_region(region, ocr_engine, seen_texts):
     result = ocr_engine.ocr(region, cls=True)
@@ -129,6 +140,7 @@ def process_image(image_path, output_path):
     image = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = model.predict(image_rgb, device='cpu')
+
     ocr_data = []
     seen_texts = set()
 
@@ -224,5 +236,6 @@ if uploaded_file is not None:
 
 # --- CONTACT INFO ---
 st.markdown('<div class="contact">Contact: <a href="mailto:shobanbabujatoth@gmail.com">shobanbabujatoth@gmail.com</a></div>', unsafe_allow_html=True)
+
 
 
