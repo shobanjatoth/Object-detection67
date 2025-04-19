@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -30,7 +30,6 @@ st.markdown(f"""
         color: white;
         font-family: 'Segoe UI', sans-serif;
     }}
-
     .main-container {{
         background-color: rgba(0, 0, 0, 0.5);
         padding: 50px 40px;
@@ -39,15 +38,13 @@ st.markdown(f"""
         margin: 100px auto 30px auto;
         border-radius: 12px;
     }}
-
     .main-title {{
         font-size: 32px;
         font-weight: bold;
-        color: #87CEEB;  /* Sky Blue */
+        color: #87CEEB;
         margin-bottom: 30px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Glow effect */
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     }}
-
     .upload-btn {{
         display: inline-block;
         background-color: #008CFF;
@@ -59,36 +56,28 @@ st.markdown(f"""
         text-decoration: none;
         cursor: pointer;
     }}
-
     .contact {{
         text-align: center;
         font-size: 16px;
         margin-top: 60px;
         font-weight: bold;
     }}
-
     .contact a {{
         color: #42A5F5;
         text-decoration: none;
     }}
-
-    /* Button styling */
     div.stButton > button:first-child {{
         background-color: #1E88E5;
         color: white;
         border-radius: 6px;
         padding: 8px 20px;
     }}
-
-    /* File uploader */
     .stFileUploader {{
         background-color: rgba(255, 255, 255, 0.1);
         border: 2px solid #64B5F6;
         border-radius: 10px;
         padding: 10px;
     }}
-
-    /* Tables */
     .stDataFrame tbody td {{
         background-color: rgba(255, 255, 255, 0.05);
         color: white;
@@ -96,7 +85,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MAIN INTERFACE CONTAINER ---
+# --- MAIN INTERFACE ---
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 st.markdown('<div class="main-title">Car License Plate Detection</div>', unsafe_allow_html=True)
 
@@ -105,8 +94,7 @@ uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png", "bmp", "mp4", "
 if uploaded_file is not None:
     st.markdown('<div class="upload-btn">Uploading...</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)  # Close main container
-
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Load Models ---
 model = YOLO('best.pt')
@@ -117,10 +105,7 @@ os.makedirs("temp", exist_ok=True)
 
 # --- Helper Functions ---
 def is_similar(text, seen_texts, threshold=0.85):
-    for seen in seen_texts:
-        if SequenceMatcher(None, text, seen).ratio() >= threshold:
-            return True
-    return False
+    return any(SequenceMatcher(None, text, seen).ratio() >= threshold for seen in seen_texts)
 
 def extract_text_from_region(region, ocr_engine, seen_texts):
     result = ocr_engine.ocr(region, cls=True)
@@ -144,7 +129,6 @@ def process_image(image_path, output_path):
     image = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = model.predict(image_rgb, device='cpu')
-
     ocr_data = []
     seen_texts = set()
 
@@ -222,23 +206,23 @@ if uploaded_file is not None:
         result_path, ocr_results = process_media(input_path, output_path)
 
     if result_path and os.path.exists(result_path):
-    if result_path.endswith(('.mp4', '.avi', '.mov', '.mkv')):
-        with open(result_path, 'rb') as f:
-            video_bytes = f.read()
-        st.video(video_bytes)
-    else:
-        st.image(result_path, use_container_width=True)
+        if result_path.endswith(('.mp4', '.avi', '.mov', '.mkv')):
+            with open(result_path, 'rb') as f:
+                video_bytes = f.read()
+            st.video(video_bytes)
+        else:
+            st.image(result_path, use_container_width=True)
 
-    if ocr_results:
-        st.subheader("🔍 Unique OCR Detected Texts")
-        df = pd.DataFrame(ocr_results)
-        st.dataframe(df)
+        if ocr_results:
+            st.subheader("🔍 Unique OCR Detected Texts")
+            df = pd.DataFrame(ocr_results)
+            st.dataframe(df)
+        else:
+            st.info("No text detected.")
     else:
-        st.info("No text detected.")
-else:
-    st.error("❌ Processed file not found. Please try again.")
-
+        st.error("❌ Processed file not found. Please try again.")
 
 # --- CONTACT INFO ---
 st.markdown('<div class="contact">Contact: <a href="mailto:shobanbabujatoth@gmail.com">shobanbabujatoth@gmail.com</a></div>', unsafe_allow_html=True)
+
 
