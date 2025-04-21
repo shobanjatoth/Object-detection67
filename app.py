@@ -1,16 +1,14 @@
 import os
 import streamlit as st
-from paddleocr import PaddleOCR, draw_ocr
+from paddleocr import PaddleOCR
 from ultralytics import YOLO
 import cv2
 import numpy as np
 import pandas as pd
-import time
 from difflib import SequenceMatcher
 import base64
 
 # --- Set PaddleOCR Model Cache Directory ---
-# Set PaddleOCR model directory inside project folder
 custom_model_dir = os.path.join(os.getcwd(), 'models')
 os.environ['PADDLEOCR_HOME'] = custom_model_dir
 os.makedirs(custom_model_dir, exist_ok=True)
@@ -105,7 +103,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 # --- Load Models ---
 model = YOLO('best.pt')
 
-# Use the caching method to load OCR model
 @st.cache_resource
 def load_ocr():
     return PaddleOCR(use_angle_cls=True, lang='en')
@@ -159,52 +156,15 @@ def process_image(image_path, output_path):
     cv2.imwrite(output_path, cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR))
     return output_path, ocr_data
 
-def process_video(video_path, output_path):
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        st.error("Error opening video file.")
-        return None, []
-
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
-    ocr_data_all = []
-    seen_texts = set()
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = model.predict(rgb_frame, device='cpu')
-
-        for result in results:
-            for box in result.boxes:
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                roi = frame[y1:y2, x1:x2]
-                if roi.size > 0:
-                    ocr_data_all.extend(extract_text_from_region(roi, ocr, seen_texts))
-
-        out.write(frame)
-
-    cap.release()
-    out.release()
-    time.sleep(1)
-    return output_path, ocr_data_all
-
 def process_media(input_path, output_path):
     ext = os.path.splitext(input_path)[1].lower()
     if ext in ['.jpg', '.jpeg', '.png', '.bmp']:
         return process_image(input_path, output_path)
     elif ext in ['.mp4', '.avi', '.mov', '.mkv']:
-        return process_video(input_path, output_path)
+        st.warning("⚠️ Video processing is currently not supported.")
+        return None, []
     else:
-        st.error("Unsupported file type.")
+        st.error("❌ Unsupported file type.")
         return None, []
 
 # --- Main Logic ---
@@ -222,12 +182,7 @@ if uploaded_file is not None:
         result_path, ocr_results = process_media(input_path, output_path)
 
     if result_path and os.path.exists(result_path):
-        if result_path.endswith(('.mp4', '.avi', '.mov', '.mkv')):
-            with open(result_path, 'rb') as f:
-                video_bytes = f.read()
-            st.video(video_bytes)
-        else:
-            st.image(result_path, use_container_width=True)
+        st.image(result_path, use_container_width=True)
 
         if ocr_results:
             st.subheader("🔍 Unique OCR Detected Texts")
@@ -236,7 +191,7 @@ if uploaded_file is not None:
         else:
             st.info("No text detected.")
     else:
-        st.error("❌ Processed file not found. Please try again.")
+        st.info("📹 Please upload an image file for processing.")
 
 # --- CONTACT INFO ---
 st.markdown('<div class="contact">Contact: <a href="mailto:shobanbabujatoth@gmail.com">shobanbabujatoth@gmail.com</a></div>', unsafe_allow_html=True)
